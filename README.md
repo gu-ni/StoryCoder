@@ -106,11 +106,3 @@ This produces `N` files named `livecodebench_v6_narratives_narrative_1.jsonl` th
 ### Step 3: Evaluate with LiveCodeBench
 
 Each per-variant JSONL file produced in Step 2 can be used directly as the input dataset for [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench) evaluation. Pass the narrative JSONL file wherever LiveCodeBench expects a benchmark dataset file — no other changes to the evaluation pipeline are needed.
-
-## Narrative Template
-
-The narrative transformation is guided by the following structure (see `instruction_template.py`):
-
-1. **Algorithm Category**: One of eight predefined categories (Graph Algorithms, Dynamic Programming, Greedy Algorithms, Sorting and Searching, String Algorithms, Data Structures, Mathematics and Number Theory, Simulation and Implementation).
-2. **Narrative Genre**: Freely selected by the model to align with the problem and chosen algorithm.
-3. **Task Overview / Constraints / Example Input/Output**: Three-part structured narrative.
