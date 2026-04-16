@@ -105,4 +105,10 @@ This produces `N` files named `livecodebench_v6_narratives_narrative_1.jsonl` th
 
 ### Step 3: Evaluate with LiveCodeBench
 
-Each per-variant JSONL file produced in Step 2 can be used directly as the input dataset for [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench) evaluation. Pass the narrative JSONL file wherever LiveCodeBench expects a benchmark dataset file — no other changes to the evaluation pipeline are needed.
+Each per-variant JSONL file produced in Step 2 can be used directly as the input dataset for [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench) evaluation. Pass the narrative JSONL file wherever LiveCodeBench expects a benchmark dataset file. No other changes to the evaluation pipeline are needed.
+
+## License
+
+The code in this repository is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+The paper and associated content are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
