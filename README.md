@@ -67,7 +67,7 @@ python convert_to_narrative.py \
 
 ### Input Format
 
-Each line of the input JSONL file should contain a problem with at least the following fields:
+The input JSONL file should follow the same format as LiveCodeBench code generation dataset files. Each line should contain a sample with at least the following fields:
 
 ```json
 {
@@ -109,6 +109,4 @@ Each per-variant JSONL file produced in Step 2 can be used directly as the input
 
 ## License
 
-The code in this repository is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
-The paper and associated content are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+The code in this repository is licensed under the MIT License. See [LICENSE](LICENSE) for details. The paper and associated content are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
