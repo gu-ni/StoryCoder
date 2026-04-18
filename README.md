@@ -1,12 +1,18 @@
 # StoryCoder: Narrative Reformulation for Structured Reasoning in LLM Code Generation
 
+<p align="left">
+  <a href="https://arxiv.org/abs/2604.14631"><img src="https://img.shields.io/badge/arXiv-2604.14631-b31b1b.svg" alt="arXiv"></a>
+</p>
+
+*Accepted at ACL 2026 Main Conference!* 🎉
+
 ## Overview
 
-**StoryCoder** is a narrative reformulation framework that transforms code generation problems into coherent natural language narratives, guiding LLMs toward more structured reasoning and better algorithmic strategies.
+> **StoryCoder** is a narrative reformulation framework that transforms code generation problems into coherent natural language narratives, guiding LLMs toward more structured reasoning and better algorithmic strategies.
+> 
+> Existing approaches augment reasoning steps or inject specific structure into how models think, but leave scattered problem conditions unchanged. StoryCoder addresses this by reorganizing task representation itself: converting fragmented, instruction-like problem statements into structured narratives that provide richer contextual structure than simple rephrasings.
 
-Existing approaches augment reasoning steps or inject specific structure into how models think, but leave scattered problem conditions unchanged. StoryCoder addresses this by reorganizing task representation itself: converting fragmented, instruction-like problem statements into structured narratives that provide richer contextual structure than simple rephrasings.
-
-Each narrative consists of three deliberate components, guided by the selected algorithm and genre:
+Each narrative consists of three components, guided by the selected algorithm and genre:
 
 - **Task Overview**: Presents the coding objective within a narrative frame, integrating scattered conditions into a coherent system.
 - **Constraints**: Reframes input ranges, time limits, and rules as natural restrictions in the story.
@@ -20,11 +26,16 @@ Each narrative consists of three deliberate components, guided by the selected a
 
 ```plaintext
 StoryCoder/
-├── convert_to_narrative.py       # Step 1: Generate narratives from coding problems
-├── narrative_splitter.py         # Step 2: Split variants into per-variant JSONL files
-├── instruction_template.py       # Prompt template for narrative conversion
-├── data/                         # Input JSONL files (benchmark problems)
-└── outputs/                      # Generated narrative JSONL files
+├── run_pipeline.py          # Run the full pipeline (Steps 1 & 2)
+├── convert_to_narrative.py  # Step 1: Generate narratives from coding problems
+├── split_narratives.py      # Step 2: Split variants into per-variant jsonl files
+├── instruction_template.py  # Prompt template for narrative reformulation
+└── datasets/
+    └── <benchmark>/
+        ├── original/        # Input jsonl files
+        └── narrative/       # Generated narrative jsonl files
+            └── <generator>/
+                └── split/   # Per-variant jsonl files
 ```
 
 ## Installation
@@ -44,42 +55,51 @@ export GOOGLE_LOCATION=...
 
 ## Usage
 
-### Step 1: Generate Narratives
-
-Convert coding problems into narrative format using one of three supported backends: `gemini`, `chatgpt`, or `claude`.
-
+Place your input jsonl file under `datasets/<benchmark>/original/`. Then run the full pipeline with a single command:
+ 
 ```bash
-python convert_to_narrative.py \
-    --backend gemini \
-    --input data/livecodebench_v6.jsonl \
-    --output outputs/livecodebench_v6_narratives.jsonl \
+python run_pipeline.py \
+    --benchmark livecodebench \
+    --input_file test6.jsonl \
+    --generator claude-opus-4-7 \
     --n_variants 5
 ```
-
+ 
 **Arguments:**
-
+ 
 | Argument | Description | Default |
 |---|---|---|
-| `--backend` | LLM backend (`gemini`, `chatgpt`, `claude`) | required |
-| `--input` | Path to input JSONL file | required |
-| `--output` | Path to output JSONL file | required |
+| `--benchmark` | Benchmark directory under `datasets/` | required |
+| `--input_file` | Input jsonl filename under `<benchmark>/original/` | required |
+| `--generator` | Narrative generator model name | required |
 | `--n_variants` | Number of narrative variants per problem | `5` |
-
-### Input Format
-
-The input JSONL file should follow the same format as LiveCodeBench code generation dataset files. Each line should contain a sample with at least the following fields:
-
+| `--datasets_dir` | Root directory containing all benchmark datasets | `datasets` |
+ 
+### Step 1: Generate Narratives
+ 
+The pipeline reads from:
+ 
+```plaintext
+datasets/<benchmark>/original/<input_file>
+```
+ 
+Each sample of the jsonl file must contain at least the following fields:
+ 
 ```json
 {
   "question_id": "unique_id",
   "question_content": "Problem statement here..."
 }
 ```
-
-### Output Format
-
-The output JSONL file appends a `narratives` field to each problem:
-
+ 
+Generated narratives are saved to:
+ 
+```plaintext
+datasets/<benchmark>/narrative/<generator>/<original_file_name>_narratives.jsonl
+```
+ 
+A `narratives` field containing `n_variants` narrative strings is appended to each problem:
+ 
 ```json
 {
   "question_id": "unique_id",
@@ -90,22 +110,39 @@ The output JSONL file appends a `narratives` field to each problem:
   ]
 }
 ```
-
-### Step 2: Split Narratives into Per-Variant Files
-
-Split the multi-variant output from Step 1 into individual JSONL files — one per narrative variant. Each output file replaces `question_content` with the narrative text (with the Algorithm Category and Narrative Genre headers stripped), making it directly compatible with the LiveCodeBench evaluation pipeline.
-
-```bash
-python narrative_splitter.py \
-    --input outputs/livecodebench_v6_narratives.jsonl \
-    --output_dir outputs/split/
+ 
+### Step 2: Split into Per-Variant Files
+ 
+The narrative jsonl from Step 1 is split into one file per variant, saved under:
+ 
+```plaintext
+datasets/<benchmark>/narrative/<generator>/split/<original_file_name>_narrative_1.jsonl
+...
+datasets/<benchmark>/narrative/<generator>/split/<original_file_name>_narrative_N.jsonl
 ```
-
-This produces `N` files named `livecodebench_v6_narratives_narrative_1.jsonl` through `livecodebench_v6_narratives_narrative_N.jsonl` in the specified output directory.
-
+ 
+Each file replaces `question_content` with the corresponding narrative text (with the Algorithm Category and Narrative Genre headers stripped) and drops the `narratives` field, making it directly compatible with the LiveCodeBench evaluation pipeline.
+ 
 ### Step 3: Evaluate with LiveCodeBench
+ 
+Each per-variant jsonl file produced in Step 2 can be used directly as the input dataset for the code generation evaluation of [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench). Pass the narrative jsonl file wherever LiveCodeBench expects a benchmark dataset file. No other changes to the evaluation pipeline are needed.
 
-Each per-variant JSONL file produced in Step 2 can be used directly as the input dataset for [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench) evaluation. Pass the narrative JSONL file wherever LiveCodeBench expects a benchmark dataset file. No other changes to the evaluation pipeline are needed.
+## Acknowledgements
+ 
+This work uses the code generation evaluation pipeline of [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench).
+
+## Citation
+
+If you find this work useful, please cite our paper:
+
+```bibtex
+@inproceedings{jang2026storycoder,
+  title     = {StoryCoder: Narrative Reformulation for Structured Reasoning in LLM Code Generation},
+  author    = {Jang, Geonhui and Han, Dongyoon and Yoo, YoungJoon},
+  booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics},
+  year      = {2026}
+}
+```
 
 ## License
 
