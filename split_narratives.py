@@ -63,7 +63,7 @@ def run_split(input_path: str, output_dir: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "Split a multi-variant narrative JSONL file into one JSONL file per variant. "
+            "Split a multi-variant narrative jsonl file into one jsonl file per variant. "
             "Each output file replaces question_content with the narrative text and is "
             "ready to be used as input for LiveCodeBench evaluation."
         )
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         "--input_file",
         type=str,
         required=True,
-        help="Input JSONL filename under <benchmark>/narrative/ (e.g. 'livecodebench_v6_narratives.jsonl').",
+        help="Input jsonl filename under <benchmark>/narrative/ (e.g. 'livecodebench_v6_narratives.jsonl').",
     )
     args = parser.parse_args()
 

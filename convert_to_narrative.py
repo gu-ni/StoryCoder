@@ -166,7 +166,7 @@ if __name__ == "__main__":
         "--input_file",
         type=str,
         required=True,
-        help="Input JSONL filename under <benchmark>/original/ (e.g. 'livecodebench_v6.jsonl').",
+        help="Input jsonl filename under <benchmark>/ (e.g. 'livecodebench_v6.jsonl').",
     )
     parser.add_argument(
         "--generator",
@@ -183,7 +183,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     base_name   = os.path.splitext(args.input_file)[0]
-    input_path  = os.path.join(args.datasets_dir, args.benchmark, "original", args.input_file)
+    input_path  = os.path.join(args.datasets_dir, args.benchmark, args.input_file)
     output_path = os.path.join(args.datasets_dir, args.benchmark, "narrative", args.generator, f"{base_name}_narratives.jsonl")
     client, backend = init_client(args.generator)
     run_convert(client, backend, args.generator, input_path, output_path, args.n_variants)

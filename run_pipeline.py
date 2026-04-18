@@ -7,7 +7,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
             "Run the full StoryCoder pipeline: generate narratives from coding problems "
-            "and split them into per-variant JSONL files ready for LiveCodeBench evaluation."
+            "and split them into per-variant jsonl files ready for LiveCodeBench evaluation."
         )
     )
     parser.add_argument(
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "--input_file",
         type=str,
         required=True,
-        help="Input JSONL filename under <benchmark>/original/ (e.g. 'livecodebench_v6.jsonl').",
+        help="Input jsonl filename under <benchmark>/ (e.g. 'livecodebench_v6.jsonl').",
     )
     parser.add_argument(
         "--generator",
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     base_name      = os.path.splitext(args.input_file)[0]
-    input_path     = os.path.join(args.datasets_dir, args.benchmark, "original", args.input_file)
+    input_path     = os.path.join(args.datasets_dir, args.benchmark, args.input_file)
     narrative_path = os.path.join(args.datasets_dir, args.benchmark, "narrative", args.generator, f"{base_name}_narratives.jsonl")
     split_dir      = os.path.join(args.datasets_dir, args.benchmark, "narrative", args.generator, "split")
 
