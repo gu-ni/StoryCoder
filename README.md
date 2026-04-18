@@ -32,7 +32,7 @@ StoryCoder/
 ├── instruction_template.py  # Prompt template for narrative reformulation
 └── datasets/
     └── <benchmark>/
-        ├── original/        # Input jsonl files
+        ├── <input_file>     # Input jsonl file
         └── narrative/       # Generated narrative jsonl files
             └── <generator>/
                 └── split/   # Per-variant jsonl files
@@ -55,7 +55,7 @@ export GOOGLE_LOCATION=...
 
 ## Usage
 
-Place your input jsonl file under `datasets/<benchmark>/original/`. Then run the full pipeline with a single command:
+Place your input jsonl file under `datasets/<benchmark>/`. Then run the full pipeline with a single command:
  
 ```bash
 python run_pipeline.py \
@@ -70,7 +70,7 @@ python run_pipeline.py \
 | Argument | Description | Default |
 |---|---|---|
 | `--benchmark` | Benchmark directory under `datasets/` | required |
-| `--input_file` | Input jsonl filename under `<benchmark>/original/` | required |
+| `--input_file` | Input jsonl filename under `<benchmark>/` | required |
 | `--generator` | Narrative generator model name | required |
 | `--n_variants` | Number of narrative variants per problem | `5` |
 | `--datasets_dir` | Root directory containing all benchmark datasets | `datasets` |
@@ -80,10 +80,10 @@ python run_pipeline.py \
 The pipeline reads from:
  
 ```plaintext
-datasets/<benchmark>/original/<input_file>
+datasets/<benchmark>/<input_file>
 ```
  
-Each sample of the jsonl file must contain at least the following fields:
+Each sample must contain at least the following fields (same format as LiveCodeBench dataset files):
  
 ```json
 {
@@ -123,9 +123,9 @@ datasets/<benchmark>/narrative/<generator>/split/<original_file_name>_narrative_
  
 Each file replaces `question_content` with the corresponding narrative text (with the Algorithm Category and Narrative Genre headers stripped) and drops the `narratives` field, making it directly compatible with the LiveCodeBench evaluation pipeline.
  
-### Step 3: Evaluate with LiveCodeBench
+### Step 3: Evaluation
  
-Each per-variant jsonl file produced in Step 2 can be used directly as the input dataset for the code generation evaluation of [LiveCodeBench](https://github.com/LiveCodeBench/LiveCodeBench). Pass the narrative jsonl file wherever LiveCodeBench expects a benchmark dataset file. No other changes to the evaluation pipeline are needed.
+Each per-variant jsonl file produced in Step 2 can be used directly as the input dataset for the code generation evaluation of LiveCodeBench. No other changes to the evaluation pipeline are needed.
 
 ## Acknowledgements
  
@@ -143,7 +143,3 @@ If you find this work useful, please cite our paper:
   year      = {2026}
 }
 ```
-
-## License
-
-The code in this repository is licensed under the MIT License. See [LICENSE](LICENSE) for details. The paper and associated content are licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
