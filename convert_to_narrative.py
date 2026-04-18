@@ -9,9 +9,6 @@ from openai import OpenAI
 import anthropic
 
 
-# ====================
-# Load already-processed question IDs from an existing output file
-# ====================
 def load_existing_question_ids(path):
     if not os.path.exists(path):
         return set()
@@ -28,12 +25,9 @@ def load_existing_question_ids(path):
     return existing_ids
 
 
-# --------------------
-# Gemini
-# --------------------
-def call_gemini(client, prompt):
+def call_gemini(client, prompt, model):
     response = client.models.generate_content(
-        model="gemini-3.1-flash-lite-preview",
+        model=model,
         contents=prompt,
         config=GenerateContentConfigDict(
             temperature=1.0,
@@ -45,12 +39,9 @@ def call_gemini(client, prompt):
     return ""
 
 
-# --------------------
-# ChatGPT (OpenAI)
-# --------------------
-def call_gpt(client, prompt):
+def call_gpt(client, prompt, model):
     response = client.responses.create(
-        model="gpt-5.4-mini-2026-03-17",
+        model=model,
         instructions="You are an imaginative storyteller who follows instructions well.",
         input=[{"role": "user", "content": prompt}],
         reasoning={"effort": "medium"},
@@ -59,12 +50,9 @@ def call_gpt(client, prompt):
     return response.output_text.strip()
 
 
-# --------------------
-# Claude (Anthropic)
-# --------------------
-def call_claude(client, prompt):
+def call_claude(client, prompt, model):
     response = client.messages.create(
-        model="claude-sonnet-4-6",
+        model=model,
         max_tokens=8192,
         temperature=1.0,
         messages=[
@@ -77,68 +65,51 @@ def call_claude(client, prompt):
     return content.strip()
 
 
-# ====================
-# Main
-# ====================
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Convert coding benchmark problems into narrative stories using an LLM backend."
-    )
-    parser.add_argument(
-        "--backend",
-        type=str,
-        required=True,
-        choices=["gemini", "chatgpt", "claude"],
-        help="LLM backend to use for narrative generation.",
-    )
-    parser.add_argument(
-        "--input",
-        type=str,
-        required=True,
-        help="Path to the input JSONL file containing coding problems.",
-    )
-    parser.add_argument(
-        "--output",
-        type=str,
-        required=True,
-        help="Path to the output JSONL file where narrative results will be saved.",
-    )
-    parser.add_argument(
-        "--n_variants",
-        type=int,
-        default=5,
-        help="Number of narrative variants to generate per problem.",
-    )
-    args = parser.parse_args()
-
-    backend = args.backend
-    N_VARIANTS = args.n_variants
-    input_path = args.input
-    output_path = args.output
-
-    # --- Initialize API client ---
-    if backend == "gemini":
-        client = genai.Client(
+BACKENDS = {
+    "gemini": {
+        "client": lambda: genai.Client(
             vertexai=True,
             project=os.getenv("GOOGLE_PROJECT_ID"),
             location=os.getenv("GOOGLE_LOCATION"),
-        )
-    elif backend == "chatgpt":
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    elif backend == "claude":
-        client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-    else:
-        raise ValueError(f"Unsupported backend: {backend}")
+        ),
+        "call": call_gemini,
+    },
+    "gpt": {
+        "client": lambda: OpenAI(api_key=os.getenv("OPENAI_API_KEY"), max_retries=5),
+        "call": call_gpt,
+    },
+    "claude": {
+        "client": lambda: anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"), max_retries=5),
+        "call": call_claude,
+    },
+}
 
-    # --- Prepare output directory ---
+
+def get_backend(generator: str) -> str:
+    for prefix in BACKENDS:
+        if generator.startswith(prefix):
+            return prefix
+    raise ValueError(f"Unsupported generator: {generator}")
+
+
+def init_client(generator: str):
+    backend = get_backend(generator)
+    return BACKENDS[backend]["client"](), backend
+
+
+def run_convert(client, backend: str, generator: str, input_path: str, output_path: str, n_variants: int):
+    
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
 
+    # Skip already-processed questions to avoid redundant API calls
     existing_ids = load_existing_question_ids(output_path)
-
+    
+    model_call = BACKENDS[backend]["call"]
     with open(input_path, "r", encoding="utf-8") as infile, \
          open(output_path, "a", encoding="utf-8") as outfile:
 
         for i, line in enumerate(infile):
+            qid = None
             try:
                 problem = json.loads(line)
                 qid = problem.get("question_id")
@@ -151,13 +122,8 @@ if __name__ == "__main__":
                 input_prompt = INSTRUCTION_THREE_COMPONENTS_ALGORITHM + problem["question_content"]
 
                 narratives = []
-                for v in range(N_VARIANTS):
-                    if backend == "gemini":
-                        new_content = call_gemini(client, input_prompt)
-                    elif backend == "chatgpt":
-                        new_content = call_gpt(client, input_prompt)
-                    elif backend == "claude":
-                        new_content = call_claude(client, input_prompt)
+                for v in range(n_variants):
+                    new_content = model_call(client, input_prompt, generator)
 
                     print(f"\n  [Variant {v+1}] --- {backend.upper()} Response ---\n")
                     print(new_content)
@@ -178,3 +144,46 @@ if __name__ == "__main__":
                 continue
 
     print(f"\n[Done] Results saved to: {output_path}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Convert coding benchmark problems into narrative stories using an LLM generator."
+    )
+    parser.add_argument(
+        "--datasets_dir",
+        type=str,
+        default="datasets",
+        help="Root directory containing all benchmark datasets. Defaults to 'datasets/'.",
+    )
+    parser.add_argument(
+        "--benchmark",
+        type=str,
+        required=True,
+        help="Benchmark directory under <datasets_dir>/ (e.g. 'livecodebench').",
+    )
+    parser.add_argument(
+        "--input_file",
+        type=str,
+        required=True,
+        help="Input JSONL filename under <benchmark>/original/ (e.g. 'livecodebench_v6.jsonl').",
+    )
+    parser.add_argument(
+        "--generator",
+        type=str,
+        required=True,
+        help="LLM generator to use for narrative reformulation.",
+    )
+    parser.add_argument(
+        "--n_variants",
+        type=int,
+        default=5,
+        help="Number of narrative variants to generate per problem.",
+    )
+    args = parser.parse_args()
+
+    base_name   = os.path.splitext(args.input_file)[0]
+    input_path  = os.path.join(args.datasets_dir, args.benchmark, "original", args.input_file)
+    output_path = os.path.join(args.datasets_dir, args.benchmark, "narrative", args.generator, f"{base_name}_narratives.jsonl")
+    client, backend = init_client(args.generator)
+    run_convert(client, backend, args.generator, input_path, output_path, args.n_variants)

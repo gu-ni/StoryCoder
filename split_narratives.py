@@ -26,30 +26,7 @@ def remove_algorithm_and_genre(text: str) -> str:
     return text.strip()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description=(
-            "Split a multi-variant narrative JSONL file into one JSONL file per variant. "
-            "Each output file replaces question_content with the narrative text and is "
-            "ready to be used as input for LiveCodeBench evaluation."
-        )
-    )
-    parser.add_argument(
-        "--input",
-        type=str,
-        required=True,
-        help="Path to the input JSONL file produced by convert_to_narrative.py.",
-    )
-    parser.add_argument(
-        "--output_dir",
-        type=str,
-        required=True,
-        help="Directory where per-variant JSONL files will be saved.",
-    )
-    args = parser.parse_args()
-
-    input_path = args.input
-    output_dir = args.output_dir
+def run_split(input_path: str, output_dir: str):
     os.makedirs(output_dir, exist_ok=True)
 
     with open(input_path, "r", encoding="utf-8") as f:
@@ -60,6 +37,9 @@ if __name__ == "__main__":
 
     num_variants = len(problems[0]["narratives"])
     base_name = os.path.splitext(os.path.basename(input_path))[0]
+    # Strip trailing '_narratives' suffix if present
+    if base_name.endswith("_narratives"):
+        base_name = base_name[: -len("_narratives")]
 
     print(f"Found {len(problems)} problems, each with {num_variants} narrative variant(s).")
 
@@ -69,17 +49,51 @@ if __name__ == "__main__":
         with open(output_path, "w", encoding="utf-8") as outfile:
             for problem in problems:
                 new_problem = dict(problem)
-                narratives = new_problem.get("narratives", [])
-
-                if variant_idx < len(narratives):
-                    content = remove_algorithm_and_genre(narratives[variant_idx])
-                    new_problem["question_content"] = content
-                else:
-                    new_problem["question_content"] = ""
-
+                new_problem["question_content"] = remove_algorithm_and_genre(
+                    new_problem["narratives"][variant_idx]
+                )
                 new_problem.pop("narratives", None)
                 outfile.write(json.dumps(new_problem, ensure_ascii=False) + "\n")
 
         print(f"  Saved: {output_path}")
 
     print(f"\nDone. {num_variants} variant file(s) saved to: {output_dir}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description=(
+            "Split a multi-variant narrative JSONL file into one JSONL file per variant. "
+            "Each output file replaces question_content with the narrative text and is "
+            "ready to be used as input for LiveCodeBench evaluation."
+        )
+    )
+    parser.add_argument(
+        "--datasets_dir",
+        type=str,
+        default="datasets",
+        help="Root directory containing all benchmark datasets. Defaults to 'datasets/'.",
+    )
+    parser.add_argument(
+        "--benchmark",
+        type=str,
+        required=True,
+        help="Benchmark directory under <datasets_dir>/ (e.g. 'livecodebench').",
+    )
+    parser.add_argument(
+        "--generator",
+        type=str,
+        required=True,
+        help="LLM generator to use for narrative reformulation.",
+    )
+    parser.add_argument(
+        "--input_file",
+        type=str,
+        required=True,
+        help="Input JSONL filename under <benchmark>/narrative/ (e.g. 'livecodebench_v6_narratives.jsonl').",
+    )
+    args = parser.parse_args()
+
+    input_path = os.path.join(args.datasets_dir, args.benchmark, "narrative", args.generator, args.input_file)
+    split_dir  = os.path.join(args.datasets_dir, args.benchmark, "narrative", args.generator, "split")
+    run_split(input_path, split_dir)
