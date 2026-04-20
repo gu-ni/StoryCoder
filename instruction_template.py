@@ -1,4 +1,4 @@
-INSTRUCTION_THREE_COMPONENTS_ALGORITHM = """Please transform the coding problem into a narrative story using the following guidelines.
+INSTRUCTION = """Please transform the coding problem into a narrative story using the following guidelines.
 
 ### Guidelines for Narrative Conversion:
 

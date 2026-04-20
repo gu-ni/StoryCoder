@@ -1,7 +1,7 @@
 import os
 import json
 import argparse
-from instruction_template import INSTRUCTION_THREE_COMPONENTS_ALGORITHM
+from instruction_template import INSTRUCTION
 
 from google import genai
 from google.genai.types import GenerateContentConfigDict
@@ -119,7 +119,7 @@ def run_convert(client, backend: str, generator: str, input_path: str, output_pa
                     print(f"  Skipping already-processed qid: {qid}")
                     continue
 
-                input_prompt = INSTRUCTION_THREE_COMPONENTS_ALGORITHM + problem["question_content"]
+                input_prompt = INSTRUCTION + problem["question_content"]
 
                 narratives = []
                 for v in range(n_variants):
