@@ -34,9 +34,7 @@ def call_gemini(client, prompt, model):
             max_output_tokens=8192,
         ),
     )
-    if response and response.candidates:
-        return response.candidates[0].content.parts[0].text.strip()
-    return ""
+    return response.candidates[0].content.parts[0].text.strip()
 
 
 def call_gpt(client, prompt, model):
@@ -59,10 +57,7 @@ def call_claude(client, prompt, model):
             {"role": "user", "content": prompt}
         ],
     )
-    content = "\n".join(
-        block.text for block in response.content if hasattr(block, "text")
-    )
-    return content.strip()
+    return response.content[0].text.strip()
 
 
 BACKENDS = {
@@ -129,8 +124,7 @@ def run_convert(client, backend: str, generator: str, input_path: str, output_pa
                     print(new_content)
                     print("\n" + "-" * 60 + "\n")
 
-                    if new_content:
-                        narratives.append(new_content)
+                    narratives.append(new_content)
 
                 problem["narratives"] = narratives
                 outfile.write(json.dumps(problem, ensure_ascii=False) + "\n")
