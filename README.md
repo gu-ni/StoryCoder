@@ -71,7 +71,7 @@ python run_pipeline.py \
 |---|---|---|
 | `--benchmark` | Benchmark directory under `datasets/` | required |
 | `--input_file` | Input jsonl filename under `<benchmark>/` | required |
-| `--generator` | Narrative generator model name | required |
+| `--generator` | Narrative generator model name (e.g., `gemini-3.1-flash-lite-preview`, `gpt-5.4-mini`, `claude-opus-4-7`) | required |
 | `--n_variants` | Number of narrative variants per problem | `5` |
 | `--datasets_dir` | Root directory containing all benchmark datasets | `datasets` |
  
