@@ -26,7 +26,7 @@ if __name__ == "__main__":
         "--input_file",
         type=str,
         required=True,
-        help="Input jsonl filename under <benchmark>/ (e.g. 'livecodebench_v6.jsonl').",
+        help="Input jsonl filename under <benchmark>/ (e.g. 'test6.jsonl').",
     )
     parser.add_argument(
         "--generator",

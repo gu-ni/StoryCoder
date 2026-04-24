@@ -84,13 +84,13 @@ if __name__ == "__main__":
         "--generator",
         type=str,
         required=True,
-        help="LLM generator to use for narrative reformulation.",
+        help="LLM generator used for narrative reformulation.",
     )
     parser.add_argument(
         "--input_file",
         type=str,
         required=True,
-        help="Input jsonl filename under <benchmark>/narrative/ (e.g. 'livecodebench_v6_narratives.jsonl').",
+        help="Input jsonl filename under <benchmark>/narrative/<generator>/ (e.g. 'test6_narratives.jsonl').",
     )
     args = parser.parse_args()
 
